@@ -1,0 +1,1447 @@
+USE invest;
+/* This Code was made to create the returns per each of our 3 randomized selected clients.
+
+Business Challenge 1
+
+Team 9
+
+Mokete Mashala
+Jenny Sæther Hulthin
+Jillian Hoglan
+Vetle Christian Nødtvedt
+Rafael de la Cajiga Leon
+
+*/
+
+/* Create a view with all the required information to be as detailed as posible for each of our clients*/
+CREATE VIEW BIGTeam9 AS
+SELECT
+	customer.customer_id, 
+	customer.full_name, 
+	customer.customer_location,
+    accounts.account_id,
+    accounts.opt38_desc,
+    accounts.client_id,
+    holdings.ticker,
+    securities.security_name,
+    securities.sec_type,
+    securities.major_asset_class,
+    securities.minor_asset_class,
+    holdings.`date`,
+    holdings.price_type,
+    holdings.`value`,
+    holdings.quantity
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+WHERE accounts.client_id IN (131, 77, 728);
+
+/* Now that we have the information stored for each of our clients, we need to create a CTE where we can calculate the 12M, 18M and 24M returns and 
+with that, join together all the information.*/
+
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '131'
+		AND BT9.major_asset_class LIKE 'equity' OR 'equty'
+
+
+/* Now that we have a table with the average of each Major Asset and it's Tickers, we recreat it for the different major tipes of assets of the client.*/
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '131'
+		AND BT9.major_asset_class LIKE 'commodities'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '131'
+		AND BT9.major_asset_class LIKE 'fixed%'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '131'
+		AND BT9.major_asset_class LIKE 'alternatives'
+
+UNION
+
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '77'
+		AND BT9.major_asset_class LIKE 'equity' OR 'equty'
+
+
+/* Now that we have a table with the average of each Major Asset and it's Tickers, we recreat it for the different major types of assets of client 77.*/
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '77'
+		AND BT9.major_asset_class LIKE 'commodities'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '77'
+		AND BT9.major_asset_class LIKE 'fixed%'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '77'
+		AND BT9.major_asset_class LIKE 'alternatives'
+
+UNION
+
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '728'
+		AND BT9.major_asset_class LIKE 'equity' OR 'equty'
+
+/* Now that we have a table with the average of each Major Asset and it's Tickers, we recreat it for the different major tipes of assets of client 728.*/
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '728'
+		AND BT9.major_asset_class LIKE 'commodities'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '728'
+		AND BT9.major_asset_class LIKE 'fixed%'
+
+UNION
+SELECT DISTINCT(BT9.customer_id),
+	BT9.full_name AS `Full Name`,
+    BT9.ticker AS Stock,
+	BT9.major_asset_class AS `Assets`,
+    BT9.quantity,
+    ROUND(Yearly_Returns.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE BT9.customer_id LIKE '728'
+		AND BT9.major_asset_class LIKE 'alternatives'
+;
+
+USE invest;
+
+/* The following code helped us calculate how much time a certain client had been holding X asset, or ticker
+*/
+
+SELECT DISTINCT year(MAX(pricing.date)),
+		year(MIN(pricing.date)),
+        customer.customer_id,
+		securities.sec_type,
+        securities.ticker,
+        (MAX(year(pricing.date))-MIN(year(pricing.date))) AS difference
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+WHERE customer.customer_id LIKE '728'
+	AND securities.ticker LIKE 'TLT';
+
+
+
+
+***********************************************************************************************************************************
+
+
+
+
+/*
+1. What is the most recent 12M**, 18M, 24M (months) return for each of the securities (and for the entire portfolio)? 
+2. What are the correlations between your assets? Are there any interesting correlations?
+3. What is the most recent 12M sigma (risk) for each of the securities? 
+4. Based on the previous 3 questions, which holdings would you sell, which holdings would you buy? Are there any outside 
+securities that you would recommend adding to the portfolio?
+5. How will your portfolio risk and expected returns change after rebalancing (selling and buying) including any new security?
+*/
+USE invest;
+-- Q1
+SELECT distinct(a.ticker),a.date,
+ROUND((a.value-a.year_price)/a.year_price,2) AS yearly_return
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as year_price
+FROM  account_dim As ad
+INNER JOIN customer_details AS cd 
+	ON ad.client_id =  cd.customer_id
+INNER JOIN holdings_current AS hc 
+	ON hc.account_id = ad.account_id
+INNER JOIN security_masterlist AS sm ON sm.ticker = hc.ticker
+INNER JOIN pricing_daily_new AS pdn ON pdn.ticker = sm.ticker,
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09'
+;
+
+-- What is the most recent 12 months return for each of the securities
+SELECT Distinct(ticker), date, ROUND((value - price_type)/price_type,2) as 12m_returns 
+FROM
+(
+SELECT *, LAG(pdn.value, 250)OVER(
+									PARTITION BY pdn.ticker
+									ORDER BY pdn.date
+									) AS lagged_price
+FROM account_dim AS ad
+INNER JOIN customer_details AS cd 
+	ON ad.client_id = cd.customer_id
+INNER JOIN holdings_current AS hc 
+	ON hc.account_id = cd.customer_id
+INNER JOIN security_masterlist AS sm 
+	ON sm.ticker = hc.ticker
+INNER JOIN pricing_daily_new AS pdn 
+	ON pdn.ticker = sm.ticker
+WHERE pdn.price_type = 'Adjusted'
+AND customer_id = 728
+LIMIT 1000
+) Q1
+;
+-- What are the correlations between your assets?
+SELECT *
+FROM invest.security_masterlist
+LIMIT 100
+;
+-- In class code
+SELECT 
+	security_name
+FROM invest.security_masterlist AS sn
+INNER JOIN `pricing_daily_new` AS pdn
+	ON pdn.pricing_daily_new = sn.security_masterlist
+;
+
+SELECT a.date, a.ticker,
+(a.value-a.lagged_price)/a.lagged_price as returns 
+FROM
+(
+SELECT *, LAG(value, 1)OVER(
+							PARTITION BY ticker
+							ORDER BY date
+							) AS lagged_price
+FROM invest.pricing_daily_new
+WHERE price_type = 'Adjusted'
+LIMIT 500
+) a
+;
+
+
+
+
+
+**********************************************************************************************************************************
+
+
+
+
+-- yearly returns view
+/*
+ -- CREATE VIEW Yearly_Returns AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09'
+GROUP BY ticker)
+;
+*/
+-- David Castro's 12M sigma (risk) for each holding 
+SELECT DISTINCT customer.full_name,  securities.major_asset_class,
+				CASE  
+						WHEN securities.major_asset_class LIKE 'equ%' THEN 'equity'
+                        WHEN securities.major_asset_class LIKE 'fixed%' THEN 'fixed_income'
+                        ELSE securities.major_asset_class
+				END AS updated_major_asset_class,
+
+        holdings.value, holdings.quantity,
+        ROUND(holdings.value * holdings.quantity,2) AS Weight,
+        ROUND((holdings.value * holdings.quantity)*((Returns_24Months-Returns_12Months)/Returns_24Months)*100,2) AS ROR,
+        IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+        ROUND((Returns_24Months-Returns_12Months)/Returns_24Months*100,2) AS Risk,
+        ROUND(AVG(Returns_12Months),2) AS AVG,
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS VAR,
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    ROUND(STD(Returns_12Months) OVER(PARTITION BY  securities.major_asset_class ORDER BY holdings.date),4) AS Sigma_12m,
+	ROUND(STD(Returns_12Months) OVER(PARTITION BY securities.major_asset_class  ORDER BY holdings.date)*SQRT(250),2) AS Total_Risk,
+    ROUND(AVG(Returns_12Months)OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date)/STD(Returns_12Months)OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS Adj_Risk
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (728)
+GROUP BY securities.major_asset_class, holdings.quantity, holdings.date, yr.value, pricing.ticker, holdings.value
+;
+
+
+
+********************************************************************************************************************************************
+
+
+
+
+/*
+1. What is the most recent 12M**, 18M, 24M (months) return for each of the securities (and for the entire portfolio)? 
+2. What are the correlations between your assets? Are there any interesting correlations?
+3. What is the most recent 12M sigma (risk) for each of the securities? 
+4. Based on the previous 3 questions, which holdings would you sell, which holdings would you buy? Are there any outside 
+securities that you would recommend adding to the portfolio?
+5. How will your portfolio risk and expected returns change after rebalancing (selling and buying) including any new security?
+*/
+USE invest;
+
+-- 1. What is the most recent 12M**, 18M, 24M (months) return for each of the securities (and for the entire portfolio)? 
+DROP TABLE IF EXISTS Team9;
+CREATE VIEW Team9 AS
+SELECT
+	customer.customer_id, 
+	customer.full_name, 
+	customer.customer_location,
+    accounts.account_id,
+    accounts.opt38_desc,
+    accounts.client_id,
+    holdings.ticker,
+    securities.security_name,
+    securities.sec_type,
+    securities.major_asset_class,
+    securities.minor_asset_class,
+    holdings.`date`,
+    holdings.price_type,
+    holdings.`value`,
+    holdings.quantity
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+WHERE accounts.client_id IN (131, 77, 728)
+;
+
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+
+SELECT BT9.customer_id, BT9.ticker, Returns_12Months, Returns_18Months, Returns_24Months
+FROM Yearly_Returns
+INNER JOIN invest.BIGTeam9 AS BT9 ON Yearly_Returns.ticker = BT9.ticker
+WHERE customer_id =77
+GROUP BY BT9.ticker
+LIMIT 10;
+
+
+-- 2. What are the correlations between your assets? Are there any interesting correlations?
+CREATE VIEW Tm9z AS
+SELECT
+	customer.customer_id, 
+	customer.full_name, 
+	customer.customer_location,
+    accounts.account_id,
+    accounts.opt38_desc,
+    accounts.client_id,
+    holdings.ticker,
+    securities.security_name,
+    securities.sec_type,
+    securities.major_asset_class,
+    securities.minor_asset_class,
+    holdings.`date`,
+    holdings.price_type,
+    holdings.`value`,
+    holdings.quantity
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+WHERE accounts.client_id IN (131, 77, 728)
+;
+
+-- correlations
+SELECT tm.ticker, security_masterlist.sp500_weight, value
+        (avg(tm.ticker * security_masterlist.sp500_weight) - avg(tm.ticker) * avg(security_masterlist.sp500_weight)) / 
+        (sqrt(avg(tm.ticker * tm.ticker) - avg(tm.ticker) * avg(tm.ticker)) * sqrt(avg(security_masterlist.sp500_weight 
+        * security_masterlist.sp500_weight) - avg(security_masterlist.sp500_weight) * avg(security_masterlist.sp500_weight))) 
+        AS correlation
+FROM security_masterlist
+INNER JOIN Tm9z AS tm ON tm.ticker = security_masterlist.ticker
+GROUP BY tm.ticker, security_masterlist.sp500_weight, value
+;
+-- ********************************************************************************************************************************
+-- 3. What is the most recent 12M sigma (risk) for each of the securities?
+-- TAYLOR SWEARINGEN's common share account insights
+-- yearly returns 
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+-- calculations and table info
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS `AVG`,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS `STD`, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS `VAR`,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`,
+    ROUND(STD(IFNULL(Returns_12Months,0)) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS `STD_12m`,
+    ((Returns_12Months-.0361)/ROUND(STD(Returns_12Months))) AS `Sharpes_Ratio_12m`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (131)
+AND securities.sec_type = 'common_share'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+-- sharpes 
+-- ((Returns_12Months-.0361)/ROUND(STD(Returns_12Months))) AS `Sharpes_Ratio_12m`
+
+
+-- TAYLOR SWEARINGEN's etf account insights
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS AVG,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS STD, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS VAR,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (131)
+AND securities.sec_type = 'etf'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+
+-- EDSON ANTONIO's common share account insights
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS AVG,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS STD, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS VAR,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (77)
+AND securities.sec_type = 'common_share'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+
+-- EDSON ANTONIO's etf account insights
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS AVG,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS STD, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS VAR,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (77)
+AND securities.sec_type = 'etf'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+
+-- DAVID CASTRO's common share account insights
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS AVG,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS STD, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS VAR,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (728)
+AND securities.sec_type = 'common_share'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+
+-- DAVID CASTRO's etf account insights
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT accounts.client_id, customer.first_name, customer.last_name, securities.sec_type, holdings.price_type, pricing.ticker, sp500_weight, holdings.value, holdings.quantity, 
+		ROUND((holdings.value * holdings.quantity),2) AS value_quanity,
+        ROUND(AVG(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS AVG,
+        ROUND(STD(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS STD, 
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS VAR,
+        ROUND(yr.value,2) AS `Value`, 
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    IFNULL(Returns_18Months,0) AS `18 Month Returns`, 
+    IFNULL(Returns_24Months,0) AS `24 Month Returns`
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (728)
+AND securities.sec_type = 'etf'
+GROUP BY pricing.ticker, sp500_weight, holdings.value, customer.first_name, holdings.price_type, 
+accounts.client_id, securities.sec_type, customer.last_name, holdings.quantity, holdings.date, yr.value
+;
+
+-- ***************************************************************************************************
+
+
+-- TAYLOR SWEARINGEN's 12M sigma (risk) for each of the securities
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT DISTINCT customer.full_name, securities.major_asset_class, holdings.value, holdings.quantity,  
+        ROUND(holdings.value * holdings.quantity,2) AS Weight,
+        ROUND((holdings.value * holdings.quantity)*((Returns_24Months-Returns_12Months)/Returns_24Months)*100,2) AS ROR,
+        ROUND((Returns_24Months-Returns_12Months)/Returns_24Months*100,2) AS Risk,
+        ROUND(AVG(Returns_12Months) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS AVG,
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS VAR,
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    ROUND(STD(Returns_12Months) OVER(PARTITION BY  securities.major_asset_class ORDER BY holdings.date),4) AS Sigma_12m,
+	ROUND(STD(Returns_12Months) OVER(PARTITION BY securities.major_asset_class  ORDER BY holdings.date)*SQRT(250),2) AS Total_Risk,
+    ROUND(AVG(Returns_12Months)OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date)/STD(Returns_12Months)OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS Adj_Risk
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (131)
+GROUP BY securities.major_asset_class, holdings.quantity, holdings.date, yr.value, pricing.ticker, holdings.value
+;
+-- EDSON ANTONIO's 12M sigma (risk) for each of the securities
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT DISTINCT customer.full_name, securities.major_asset_class, holdings.value, holdings.quantity,  
+        ROUND(holdings.value * holdings.quantity,2) AS Weight,
+        ROUND((holdings.value * holdings.quantity)*((Returns_24Months-Returns_12Months)/Returns_24Months)*100,2) AS ROR,
+        ROUND((Returns_24Months-Returns_12Months)/Returns_24Months*100,2) AS Risk,
+        ROUND(AVG(Returns_12Months) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS AVG,
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS VAR,
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    ROUND(STD(Returns_12Months) OVER(PARTITION BY  securities.major_asset_class ORDER BY holdings.date),4) AS Sigma_12m,
+	ROUND(STD(Returns_12Months) OVER(PARTITION BY securities.major_asset_class  ORDER BY holdings.date)*SQRT(250),2) AS Total_Risk,
+    ROUND(AVG(Returns_12Months)OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date)/STD(Returns_12Months)OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS Adj_Risk
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (77)
+GROUP BY securities.major_asset_class, holdings.quantity, holdings.date, yr.value, pricing.ticker, holdings.value
+;
+-- DAVID CASTRO's 12M sigma (risk) for each of the securities
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT DISTINCT customer.full_name, securities.major_asset_class, holdings.value, holdings.quantity,  
+        ROUND(holdings.value * holdings.quantity,2) AS Weight,
+        ROUND((holdings.value * holdings.quantity)*((Returns_24Months-Returns_12Months)/Returns_24Months)*100,2) AS ROR,
+        ROUND((Returns_24Months-Returns_12Months)/Returns_24Months*100,2) AS Risk,
+        ROUND(AVG(Returns_12Months) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS AVG,
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS VAR,
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    ROUND(STD(Returns_12Months) OVER(PARTITION BY  securities.major_asset_class ORDER BY holdings.date),4) AS Sigma_12m,
+	ROUND(STD(Returns_12Months) OVER(PARTITION BY securities.major_asset_class  ORDER BY holdings.date)*SQRT(250),2) AS Total_Risk,
+    ROUND(AVG(Returns_12Months)OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date)/STD(Returns_12Months)OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS Adj_Risk
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+WHERE accounts.client_id IN (728)
+GROUP BY securities.major_asset_class, holdings.quantity, holdings.date, yr.value, pricing.ticker, holdings.value
+;
+ -- TOTAL portfolio 12M sigma (risk) for each of the securities
+WITH Yearly_Returns
+AS
+(SELECT *,
+ROUND((a.value-a.Return_12Months)/a.Return_12Months,2) AS Returns_12Months,
+ROUND((a.value-a.Return_18Months)/a.Return_18Months,2) AS Returns_18Months,
+ROUND((a.value-a.Return_24Months)/a.Return_24Months,2) AS Returns_24Months
+FROM 
+(SELECT *, 
+	LAG(value,250) 
+		OVER (partition by ticker ORDER BY date) as Return_12Months,
+        LAG(value,375) 
+		OVER (partition by ticker ORDER BY date) as Return_18Months,
+        LAG(value,500) 
+		OVER (partition by ticker ORDER BY date) as Return_24Months
+FROM pricing_daily_new
+WHERE price_type = 'Adjusted') as a
+WHERE a.date = '2022-09-09')
+SELECT DISTINCT securities.major_asset_class, holdings.value, holdings.quantity,  
+        ROUND(holdings.value * holdings.quantity,2) AS Weight,
+        ROUND((holdings.value * holdings.quantity)*((Returns_24Months-Returns_12Months)/Returns_24Months)*100,2) AS ROR,
+        ROUND((Returns_24Months-Returns_12Months)/Returns_24Months*100,2) AS Risk,
+        ROUND(AVG(Returns_12Months) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS AVG,
+        ROUND(VARIANCE(holdings.value) OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date),2) AS VAR,
+	IFNULL(Returns_12Months,0) AS `12 Month Returns`, 
+    ROUND(STD(Returns_12Months) OVER(PARTITION BY  securities.major_asset_class ORDER BY holdings.date),4) AS Sigma_12m,
+	ROUND(STD(Returns_12Months) OVER(PARTITION BY securities.major_asset_class  ORDER BY holdings.date)*SQRT(250),2) AS Total_Risk,
+    ROUND(AVG(Returns_12Months)OVER(PARTITION BY securities.major_asset_class ORDER BY holdings.date)/STD(Returns_12Months)OVER(PARTITION BY securities.sec_type ORDER BY holdings.date),2) AS Adj_Risk
+FROM account_dim AS accounts
+INNER JOIN customer_details AS customer ON customer.customer_id = accounts.client_id
+INNER JOIN holdings_current AS holdings ON holdings.account_id = accounts.account_id
+INNER JOIN security_masterlist AS securities ON securities.ticker = holdings.ticker
+INNER JOIN pricing_daily_new AS pricing ON pricing.ticker = securities.ticker
+INNER JOIN Yearly_Returns AS yr ON pricing.ticker = yr.ticker
+GROUP BY securities.major_asset_class, holdings.quantity, holdings.date, yr.value, pricing.ticker, holdings.value
+;
+
+
+
+
+
+***********************************************************************************************************************************
+
+
+
+
+
+
+/*  
+Objective: 	To calculate the average return, standard deviation of return and adjusted risk per asset class for total porrfolio
+			This will be used to compare against each client's asset returns
+*/
+
+USE invest;
+
+-- A CTE was created to calculate the returns 
+
+WITH returns AS (
+SELECT 	a.date, 
+		a.ticker, 
+		value, 
+		lagged_price_12M,
+        lagged_price_18M,
+        lagged_price_24M,
+		ROUND(IFNULL((a.value - lagged_price_12M) / a.lagged_price_12M,0),3) AS returns_12M,
+        ROUND(IFNULL((a.value - lagged_price_18M) / a.lagged_price_12M,0),3)  AS returns_18M,
+        ROUND(IFNULL((a.value - lagged_price_24M) / a.lagged_price_12M,0),3)  AS returns_24M   
+
+FROM 
+			(SELECT *, 
+						LAG(value,250) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_12M ,
+                            
+						LAG(value,375) OVER (             
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_18M ,
+                            
+						LAG(value,500) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_24M 
+
+			FROM invest.pricing_daily_new
+			WHERE price_type = 'Adjusted' 
+            ) as a
+
+WHERE a.date = '2022-09-09'
+GROUP BY ticker
+)
+,
+
+-- The following CTE is used to summarise the asset details from the security masterlist.
+
+asset_details AS (
+					SELECT 	hc.ticker,
+                            sm.security_name,
+                            sm.sec_type,
+							sm.major_asset_class,
+                            CASE 
+								WHEN sm.major_asset_class LIKE 'equ%' THEN 'equity'  -- correct for mispelled equity
+                                WHEN sm.major_asset_class LIKE 'fixed%' THEN 'fixed_income'   -- correct for mispelled fixed_income
+                                ELSE sm.major_asset_class
+                            END  AS new_major_asset_class,
+							sm.minor_asset_class
+					FROM holdings_current AS hc
+                    INNER JOIN security_masterlist AS sm
+					ON hc.ticker = sm.ticker
+                    )
+,
+
+returns_per_assetclass AS (
+SELECT  
+		DISTINCT(r.ticker),       
+        -- major_asset_class,
+        new_major_asset_class,
+        sec_type,
+		security_name,
+		r.date,
+        returns_12M,
+        returns_18M,
+        returns_24M
+FROM returns AS r   -- joining lagged prices to calculate the returns
+INNER JOIN asset_details AS ad
+ON r.ticker = ad.ticker
+
+)
+,
+
+-- Below a CTE was used to calculate average, standard deviation and risk-adjusted returns
+-- the follwoing CTE was used to partition the returns per major asset class
+return_per_major_class_per_class AS (
+SELECT 	DISTINCT(new_major_asset_class),
+		ticker,
+        security_name,
+        returns_12M,
+        returns_18M,
+        returns_24M,
+        
+		AVG(returns_12M) OVER (PARTITION BY new_major_asset_class) AS ave_ret_per_class_12M,
+        AVG(returns_18M) OVER (PARTITION BY new_major_asset_class) AS ave_ret_per_class_18M,
+        AVG(returns_24M) OVER (PARTITION BY new_major_asset_class) AS ave_ret_per_class_24M,
+        
+		STD(returns_12M) OVER (PARTITION BY new_major_asset_class) AS sigma_ret_per_class_12M,
+        STD(returns_18M) OVER (PARTITION BY new_major_asset_class) AS sigma_ret_per_class_18M,
+        STD(returns_24M) OVER (PARTITION BY new_major_asset_class) AS sigma_ret_per_class_24M 
+              
+FROM returns_per_assetclass
+
+ORDER BY new_major_asset_class, returns_12M DESC
+)
+,
+
+total_portfolio AS (
+SELECT 	'Total' AS total,
+		AVG(returns_12M) AS total_ave_ret_12M,  -- calculate average of total portfolio for 12M
+        AVG(returns_18M) AS total_ave_ret_18M,  -- calculate average of total portfolio for 18M
+        AVG(returns_24M) AS total_ave_ret_24M,  -- calculate average of total portfolio for 24M
+        
+		STD(returns_12M)  AS sigma_total_12M,   -- calculate standard_deviation of total portfolio for 12M
+        STD(returns_18M)  AS sigma_total_18M,   -- calculate standard_deviation of total portfolio for 18M
+        STD(returns_24M) AS sigma_total_24M,     -- calculate standard_deviation of total portfolio for 24M
+
+        AVG(returns_12M)/STD(returns_12M) AS total_adj_risk_12M,
+		AVG(returns_18M)/STD(returns_18M) AS total_adj_risk_18M,
+        AVG(returns_24M)/STD(returns_24M) AS total_adj_risk_24M
+
+FROM returns_per_assetclass
+)
+
+
+SELECT	new_major_asset_class AS asset_class,
+		ROUND(ave_ret_per_class_12M,3) AS avg_12M,
+        ROUND(ave_ret_per_class_18M,3) AS avg_18M,
+        ROUND(ave_ret_per_class_24M,3) AS avg_24M,
+        
+		ROUND(sigma_ret_per_class_12M,3) AS sigma_12M,
+        ROUND(sigma_ret_per_class_18M,3) AS sigma_18M,
+        ROUND(sigma_ret_per_class_24M,3) AS sigma_24M,
+       
+        ROUND(ave_ret_per_class_12M/sigma_ret_per_class_12M,3) AS adj_risk_12M,
+		ROUND(ave_ret_per_class_18M/sigma_ret_per_class_18M,3)AS adj_risk_18M,
+        ROUND(ave_ret_per_class_24M/sigma_ret_per_class_24M,3) AS adj_risk_24M
+		       
+FROM return_per_major_class_per_class
+GROUP BY new_major_asset_class
+
+UNION  -- this union is used to join the asset class information with the total for the entire portfolio
+
+SELECT total,
+		ROUND(total_ave_ret_12M,4),
+        ROUND(total_ave_ret_18M,3),
+        ROUND(total_ave_ret_24M,3),
+        
+        ROUND(sigma_total_12M,3),
+        ROUND(sigma_total_18M,3),
+        ROUND(sigma_total_24M,3),
+        
+        ROUND(total_adj_risk_12M,3),
+		ROUND(total_adj_risk_18M,3),
+		ROUND(total_adj_risk_24M,3)
+
+FROM total_portfolio
+;
+   
+
+
+
+
+*****************************************************************************************************************************
+
+
+
+
+
+/* 
+Objectives: 	To rank the top performing security per major asset class for the past 12M 
+				in order to be able to make buy recommendations for clients.
+*/
+
+
+USE invest;
+
+-- A CTE was created to calculate the returns 
+
+WITH returns AS (
+SELECT 	a.date, 
+		a.ticker, 
+		value, 
+		lagged_price_12M,
+        lagged_price_18M,
+        lagged_price_24M,
+		ROUND(IFNULL((a.value - lagged_price_12M) / a.lagged_price_12M,0),3) AS returns_12M,
+        ROUND(IFNULL((a.value - lagged_price_18M) / a.lagged_price_12M,0),3)  AS returns_18M,
+        ROUND(IFNULL((a.value - lagged_price_24M) / a.lagged_price_12M,0),3)  AS returns_24M   
+
+FROM 
+			(SELECT *, 
+						LAG(value,250) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_12M ,
+                            
+						LAG(value,375) OVER (             
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_18M ,
+                            
+						LAG(value,500) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_24M 
+
+			FROM invest.pricing_daily_new
+			WHERE price_type = 'Adjusted' 
+            ) as a
+
+WHERE a.date = '2022-09-09'
+GROUP BY ticker
+)
+,
+
+-- CTE was created to obtain information about asset details to be joined with the ticker from the pricing daily new table
+-- name correction for equity and fixed income were done and a new major asset class was created
+
+asset_details AS (
+					SELECT 	hc.ticker,
+                            sm.security_name,
+                            sm.sec_type,
+							sm.major_asset_class,
+                            CASE 
+								WHEN sm.major_asset_class LIKE 'equ%' THEN 'equity'  -- correct for mispelling
+                                WHEN sm.major_asset_class LIKE 'fixed%' THEN 'fixed_income'  -- correct ro mispelling
+                                ELSE sm.major_asset_class
+                            END  AS new_major_asset_class,
+							sm.minor_asset_class
+					FROM holdings_current AS hc
+                    INNER JOIN security_masterlist AS sm
+					ON hc.ticker = sm.ticker
+                    )
+,
+
+-- CTE below was created for the returns for the different asset classes
+
+returns_per_assetclass AS (
+SELECT  
+		DISTINCT(r.ticker),
+        new_major_asset_class,
+        sec_type,
+		security_name,
+        ROUND(IFNULL((value - lagged_price_12M) / lagged_price_12M,0),3) AS returns_12M, -- calculate returns for 12 M
+        ROUND(IFNULL((value - lagged_price_18M) / lagged_price_18M,0),3) AS returns_18M, -- calculate returns for 18 M
+        ROUND(IFNULL((value - lagged_price_24M) / lagged_price_24M,0),3) AS returns_24M -- calculate returns for 24 M
+FROM returns AS r
+INNER JOIN asset_details AS ad   -- joing with the asset details to get the returns
+ON r.ticker = ad.ticker
+)
+,
+
+-- this is done so that a ranking can be applied to the tickers based on the best performing in the past 12M
+-- This provides insights into the most recently performing securities
+
+top_performing_ticker_12M AS (
+SELECT 	new_major_asset_class,
+		ticker,
+		security_name,
+        sec_type,
+        returns_12M,
+        returns_18M,
+        returns_24M
+FROM returns_per_assetclass
+GROUP BY ticker 
+-- ORDER BY new_major_asset_class, returns_12M DESC
+)
+
+
+-- the returns for each be ticker ordered by the 12M returns in DESC order
+SELECT 	new_major_asset_class,
+		ticker,
+		security_name,
+        sec_type,
+        returns_12M,
+        DENSE_RANK() OVER (PARTITION BY new_major_asset_class ORDER BY returns_12M DESC) AS ranking_12M, -- ranking by 12M shows the top performing securities at the top
+        returns_18M,
+        returns_24M
+FROM top_performing_ticker_12M
+;
+		
+
+*******************************************************************************************************************************
+
+
+/* Objective: The following query was compiled to calculate the correlation of asset classes against the returns for each client*/
+
+USE invest;
+
+-- A view was created with full detail of calculated variables to be used for correlation calculations 
+
+CREATE VIEW correlation_data_rev2 AS 
+
+WITH returns AS (
+SELECT 	a.date, 
+		a.ticker, 
+		value, 
+		lagged_price_12M,
+        lagged_price_18M,
+        lagged_price_24M,
+		ROUND(IFNULL((a.value - lagged_price_12M) / a.lagged_price_12M,0),3) AS returns_12M,
+        ROUND(IFNULL((a.value - lagged_price_18M) / a.lagged_price_12M,0),3)  AS returns_18M,
+        ROUND(IFNULL((a.value - lagged_price_24M) / a.lagged_price_12M,0),3)  AS returns_24M   
+
+FROM 
+			(SELECT *, 
+						LAG(value,250) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_12M ,
+                            
+						LAG(value,375) OVER (             
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_18M ,
+                            
+						LAG(value,500) OVER (              
+										PARTITION BY ticker
+										ORDER BY `date`
+										) AS lagged_price_24M 
+
+			FROM invest.pricing_daily_new
+			WHERE price_type = 'Adjusted' 
+            ) as a
+
+WHERE a.date = '2022-09-09'
+GROUP BY ticker
+)
+,
+
+customer_details AS (  					-- CTE to obtain customer details, this will be used in a join where we can obtain the returns per customer
+					SELECT 	DISTINCT(cd.customer_id),
+							cd.full_name,
+                            cd.customer_location,
+							ad.main_account,
+                            ad.opt_38,
+							ad.opt38_desc,
+							hc.value AS holding_price,
+							hc.ticker,
+                            hc.quantity,
+							sm.security_name,
+							CASE 
+								WHEN sm.major_asset_class LIKE 'equ%' THEN 'equity'  -- correct for mispelled equity
+                                WHEN sm.major_asset_class LIKE 'fixed%' THEN 'fixed_income'   -- correct for mispelled fixed_income
+                                ELSE sm.major_asset_class
+                            END  AS asset,
+							sm.major_asset_class,
+							sm.minor_asset_class
+					FROM account_dim AS ad
+					INNER JOIN customer_details AS cd
+					ON cd.customer_id = ad.client_id
+					INNER JOIN holdings_current AS hc
+					ON hc.account_id = ad.account_id
+					INNER JOIN security_masterlist AS sm
+					ON hc.ticker = sm.ticker
+                    WHERE customer_id IN (77,131,728)
+                    )
+
+,
+-- This table is prepared for data required to perform omalization of values for correlation                    
+
+summary_table AS (
+SELECT 	customer_id,
+		full_name,
+		r. ticker AS stock,
+        asset,
+        quantity,
+        quantity*value AS qv,
+        AVG(quantity*value) OVER (PARTITION BY customer_id) AS avg_qv_customer,  -- calculate average quantity*value for each customer
+        STD(quantity*value) OVER (PARTITION BY customer_id) AS std_qv_customer,   -- calculate standard deviation
+		returns_12M,
+        AVG(returns_12M) OVER (PARTITION BY customer_id) AS avg_returns_12M,   -- calculate the average returns
+        STD(returns_12M) OVER (PARTITION BY customer_id) AS std_returns_12M    -- calculate standard deviation of the returns
+
+FROM customer_details AS cd
+INNER JOIN returns AS r
+ON cd.ticker = r.ticker
+-- WHERE customer_id = 77
+ORDER BY customer_id, asset ASC 
+)
+,
+
+-- the following CTE normalizes the quantity holdings per customer and the returns for each customer
+normalized AS (
+SELECT 	customer_id,
+		full_name,
+		stock,
+        asset,
+		(qv - avg_qv_customer) / std_qv_customer AS normalized_qv,
+        AVG((qv - avg_qv_customer) / std_qv_customer) OVER (PARTITION BY customer_id, asset) AS normalized_avg_asset,
+        (returns_12M - avg_returns_12M) / std_returns_12M AS normalized_returns_12M,
+        AVG((returns_12M - avg_returns_12M) / std_returns_12M) OVER (PARTITION BY customer_id, asset) AS normalized_avg_return_asset
+FROM summary_table
+)
+
+SELECT 	customer_id,
+		full_name,
+		stock,
+        asset,
+       
+		normalized_qv - normalized_avg_asset AS `qv-qvmean`,  -- calcuate the difference between the (normalized quantity * value) and the average of (normalized quantity * value)
+		POWER(normalized_qv - normalized_avg_asset,2) AS `qv-qvmean-squared`,
+       
+		normalized_returns_12M - normalized_avg_return_asset AS `ret-mean_ret`,  -- calcuate the difference between the (normalized returns) and the average of (normalized returns)
+		POWER(normalized_returns_12M - normalized_avg_return_asset,2) AS `ret-mean_ret-squared`
+ 
+FROM normalized
+;
+
+-- ****** CLIENT 77
+
+-- correlation of client 77 alternative to total returns 
+-- Result 0.581 correlation
+
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_77_alternative  -- equation to calculate correlation between returns and alternative holdings
+FROM correlation_data_rev2
+WHERE customer_id = 77
+AND asset = 'alternatives'
+;
+
+-- correlation of client 77 equity to total returns 
+-- Result 0.0349 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_77_equity
+FROM correlation_data_rev2
+WHERE customer_id = 77
+AND asset = 'equity'
+;
+
+
+-- correlation of client 77 commodities to total returns 
+-- Result 0.152 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_77_commodities
+FROM correlation_data_rev2
+WHERE customer_id = 77
+AND asset = 'commodities'
+;
+
+-- correlation of client 77 fixed_income to total returns 
+-- Result is -0.192 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_77_fixed_income
+FROM correlation_data_rev2
+WHERE customer_id = 77
+AND asset = 'fixed_income'
+;
+
+-- ****** CLIENT 131
+
+-- correlation of client 131 alternative to total returns 
+-- Result 0.579 correlation
+
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_1317_alternative
+FROM correlation_data_rev2
+WHERE customer_id = 131
+AND asset = 'alternatives'
+;
+
+-- correlation of client 77 equity to total returns 
+-- Result -0.101 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_131_equity
+FROM correlation_data_rev2
+WHERE customer_id = 131
+AND asset = 'equity'
+;
+
+
+-- correlation of client 131 commodities to total returns 
+-- Result 0.151 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_131_commodities
+FROM correlation_data_rev2
+WHERE customer_id = 131
+AND asset = 'commodities'
+;
+
+-- correlation of client 131 fixed_income to total returns 
+-- Result is 0.329 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_131_fixed_income
+FROM correlation_data_rev2
+WHERE customer_id = 131
+AND asset = 'fixed_income'
+;
+
+
+-- ****** CLIENT 728
+
+-- correlation of client 728 alternative to total returns 
+-- Result 0.018 correlation
+
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_728_alternative
+FROM correlation_data_rev2
+WHERE customer_id = 728
+AND asset = 'alternatives'
+;
+
+-- correlation of client 728 equity to total returns 
+-- Result -0.416 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_728_equity
+FROM correlation_data_rev2
+WHERE customer_id = 728
+AND asset = 'equity'
+;
+
+
+-- correlation of client 728 commodities to total returns 
+-- Result -0.416 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_728_commodities
+FROM correlation_data_rev2
+WHERE customer_id = 728
+AND asset = 'commodities'
+;
+
+-- correlation of client 728 fixed_income to total returns 
+-- Result is 0.204 correlation
+SELECT SUM(`qv-qvmean` * `ret-mean_ret`) / POWER(SUM( `qv-qvmean-squared`) * SUM( `ret-mean_ret-squared`),0.5) AS r_728_fixed_income
+FROM correlation_data_rev2
+WHERE customer_id = 728
+AND asset = 'fixed_income'
+;
